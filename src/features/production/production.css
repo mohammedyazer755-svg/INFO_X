@@ -1,0 +1,320 @@
+.prod-page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  color: var(--text-main);
+}
+
+.prod-metric-source {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.prod-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.prod-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.prod-field input,
+.prod-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.prod-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+.prod-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.prod-actions button {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-surface-alt);
+  color: var(--text-main);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.prod-actions button:hover { border-color: var(--abb-red); }
+.prod-actions button:focus-visible,
+.prod-field input:focus-visible,
+.prod-field select:focus-visible { outline: 2px solid var(--abb-red); outline-offset: 2px; }
+
+.prod-formula {
+  margin-top: 16px;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.prod-accounting-details { margin-top: 16px; }
+
+.prod-telemetry-scroll {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.prod-telemetry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  text-align: left;
+}
+
+.prod-table-caption {
+  padding-bottom: 8px;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.prod-telemetry-table th,
+.prod-telemetry-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--border-color-subtle);
+  white-space: nowrap;
+}
+
+.prod-telemetry-table td {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.prod-quality {
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--bg-surface-alt);
+}
+
+.prod-quality-valid { color: var(--color-good); background: var(--color-good-bg); }
+.prod-quality-stale { color: var(--color-warn); background: var(--color-warn-bg); }
+.prod-quality-invalid { color: var(--color-crit); background: var(--color-crit-bg); }
+
+.prod-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.prod-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.prod-eyebrow {
+  margin-bottom: 4px;
+  color: var(--abb-red);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.prod-page-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.prod-description {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.prod-data-status {
+  display: grid;
+  gap: 10px;
+}
+
+.prod-status-badge {
+  display: inline-flex;
+  justify-self: start;
+  padding: 4px 9px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-surface-alt);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prod-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 11px;
+}
+
+.prod-metadata dt,
+.prod-kpi dt,
+.prod-drone-details dt {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.prod-metadata dd {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+}
+
+.prod-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.prod-analytics {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.prod-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.prod-card-heading svg {
+  flex-shrink: 0;
+  color: var(--abb-red);
+}
+
+.prod-card-heading h2 {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.prod-placeholder {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.prod-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.prod-kpi {
+  padding: 12px;
+  border: 1px solid var(--border-color-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface-alt);
+}
+
+.prod-kpi dd {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.prod-drone-column {
+  min-width: 0;
+}
+
+.prod-drone-viewport {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-surface-alt);
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.prod-drone-viewport .prod-placeholder {
+  margin-top: 16px;
+}
+
+.prod-drone-details {
+  display: grid;
+  gap: 12px;
+}
+
+.prod-drone-details > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color-subtle);
+}
+
+.prod-drone-details dd {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+@media (max-width: 1024px) {
+  .prod-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .prod-card {
+    padding: 14px;
+  }
+
+  .prod-page-header h1 {
+    font-size: 18px;
+  }
+
+  .prod-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .prod-input-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
