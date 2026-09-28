@@ -1,0 +1,15 @@
+# Drone inspection simulation
+
+The always-visible SIMULATION badge distinguishes this mission from physical drone telemetry. No models or network assets are loaded. Findings are extension-owned snapshots of linked sensor evidence; no camera, temperature or vibration drone measurements are asserted, and legacy alarm logs are never modified.
+
+`../config/nodes.js` is the shared configurable illustrative node registry used by the condition layout and mission waypoints. Coordinates are in kilometres, with module/supporting-evidence links per waypoint. The default layout is 2.4 km with four nodes and a base at 0 km. All-waypoint missions inspect nodes in coordinate order; the explicit route selector or suggestion button can dispatch a single-node mission. Recommendations only suggest destinations.
+
+Default timing is 10× active viewport time, 12 m/s cruise speed, five mission seconds taking off, ten inspecting each waypoint, and five landing after the return flight. Position and distance integrate cruise speed; battery is a declared illustrative linear model, 0.05 percentage points per active mission second, floored at zero. Takeoff, inspection and landing consume time/battery with zero horizontal speed. This model is not a real drone endurance estimate.
+
+The pure FSM follows idle → takingOff → travelling → inspecting, repeats travel/inspection for remaining nodes, then returning → complete. Invalid commands leave state unchanged. Pause/resume is orthogonal to those states. Explicit return can interrupt takeoff, travel or inspection, clears an unfinished inspection and flies back before landing. Reset cancels runtime timers and clears the route, snapshot, findings, distance, elapsed time and battery state. A complete mission requires reset before another start.
+
+Snapshots are copied at waypoint arrival and added to findings only after the declared inspection duration completes. They preserve sources, quality, context and observation windows. Stale or excluded-context evidence receives no score; unavailable channels retain their integration reasons. Hall remains supporting splice-zone evidence. The drone never creates fresh sensor readings.
+
+`useDroneSimulation` lives in the persistent provider. Intersection visibility, document visibility and panel unmount pause the simulation clock without changing production/accounting subscriptions. Returning to the viewport resumes automatically unless manually paused. Elapsed browser gaps are capped to avoid catch-up jumps. The simulation timer does not poll ESP32. All timers, media/visibility listeners and intersection observers are cleaned up.
+
+The lazy R3F scene uses procedural belt, posts, colored spheres and a box/cylinder drone. Demand rendering avoids continuous GPU animation, and declarative geometries/materials are disposed by R3F on unmount. Context loss and renderer failures switch to a static SVG route/progress view. Reduced motion uses that static view and discrete one-second mission updates, preserving the same time scale. The scene is 280px high; the existing responsive layout places it below analytics at widths up to 1024px.

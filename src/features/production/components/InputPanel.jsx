@@ -8,13 +8,15 @@ function NumberInput({ label, name, settings, updateInputs, step = "any", max })
   </label>;
 }
 
-export default function InputPanel({ production }) {
+export default function InputPanel({ production, scenarioActive = false }) {
   const { settings, updateInputs, applyPreset, resetSession, flow } = production;
   const input = (name, label, extra = {}) => <NumberInput key={name} name={name} label={label} settings={settings} updateInputs={updateInputs} {...extra} />;
   return (
     <section className="prod-card" aria-label="Production inputs">
       <div className="prod-card-heading"><h2>Production inputs</h2></div>
       <p className="prod-description">Editable illustrative assumptions. Demo and hardware contexts maintain separate session totals.</p>
+      {scenarioActive && <p className="prod-description">Scenario inputs are fixed by the fixture. Switch to the live bridge to edit these controls; what-if forecasts remain separately editable.</p>}
+      <fieldset className="prod-scenario-input-lock" disabled={scenarioActive}>
       <div className="prod-input-grid">
         <label className="prod-field"><span>Accounting context</span><select value={settings.context} onChange={event => updateInputs({ context: event.target.value })}>
           <option value="demo">Demo / estimated</option><option value="hardware">Hardware / estimated</option>
@@ -62,6 +64,7 @@ export default function InputPanel({ production }) {
         {!flow.unavailable && ` = ${flow.value.toLocaleString(undefined, { maximumFractionDigits: 2 })} t/h`}
       </p>
       <p className="prod-description">Demo presets use the existing demo observations as their clock. Missing observations still suspend accounting. The maximum gap is also limited by speed freshness. Reloading begins new sessions.</p>
+      </fieldset>
     </section>
   );
 }

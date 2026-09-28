@@ -38,11 +38,11 @@ export function createTelemetryStore({
     for (const listener of listeners) listener();
   }
 
-  function refresh() {
+  function refresh(force = false) {
     const changed = [...channels].some(([field, channel]) =>
       materialize(channel.latest).quality !== snapshot[field].latest.quality ||
       channel.history.some((item, index) => materialize(item).quality !== snapshot[field].history[index]?.quality));
-    if (changed) notify();
+    if (changed || force === true) notify();
   }
 
   function publish(input) {
@@ -105,7 +105,20 @@ export function createTelemetryStore({
   }
 
   rebuild();
-  return Object.freeze({ publish, subscribe, refresh, invalidateHardware,
+  function resetWindows({ clearReplay = false } = {}) {
+    for (const [field, channel] of channels) {
+      channel.history = []; channel.identity = null; channel.generation++;
+      channel.boundary = clearReplay ? -Infinity : now();
+      if (clearReplay) channel.seen.clear();
+      channel.latest = createObservation({ field, receivedAt: now() });
+    }
+    notify();
+  }
+  return Object.freeze({ publish, subscribe, refresh, invalidateHardware, resetWindows,
     getFreshnessLimit: field => freshnessByChannel[field] ?? freshnessLimitMs,
+    getCurrentTime: now,
+    // Recorded acquisition quality stays valid for historical analysis even
+    // after the display's freshness view ages old samples to stale.
+    getRecordedHistory: field => Object.freeze([...(channels.get(field)?.history ?? [])]),
     getSnapshot: () => snapshot });
 }

@@ -8,5 +8,6 @@ export function useThroughput(bridge, enabled) {
     if (!enabled) { controller.suspend(); return; }
     return controller.connect();
   }, [controller, enabled]);
-  return { ...state, updateInputs: controller.updateInputs, applyPreset: controller.applyPreset, resetSession: controller.resetSession };
+  return { ...state, updateInputs: controller.updateInputs, applyPreset: controller.applyPreset,
+    updateForecastOptions: controller.updateForecastOptions, resetSession: controller.resetSession };
 }

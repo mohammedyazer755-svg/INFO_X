@@ -1,26 +1,23 @@
-import React from "react";
-import { Activity, ScanLine, TrendingUp, Wrench } from "lucide-react";
+import React, { useState } from "react";
+import { Activity } from "lucide-react";
 import { useProduction } from "./ProductionProvider";
-import ThroughputStrip from "./components/ThroughputStrip";
+import { MetricValue } from "./components/ThroughputStrip";
 import InputPanel from "./components/InputPanel";
 import ProductionImpact from "./components/ProductionImpact";
+import SensorFeaturePanel from "./components/SensorFeaturePanel";
+import ConditionDisplay from "./components/ConditionDisplay";
+import MaintenanceRec from "./components/MaintenanceRec";
+import ForecastPanel from "./components/ForecastPanel";
+import DronePanel from "./components/DronePanel";
+import ScenarioPanel from "./components/ScenarioPanel";
+import ReportExport from "./components/ReportExport";
 import "./production.css";
 
-function PlaceholderCard({ title, icon: Icon, children }) {
-  return (
-    <section className="prod-card" aria-label={title}>
-      <div className="prod-card-heading">
-        <Icon size={18} aria-hidden="true" />
-        <h2>{title}</h2>
-      </div>
-      <p className="prod-placeholder">Unavailable</p>
-      <p className="prod-description">{children}</p>
-    </section>
-  );
-}
-
 export default function ProductionView() {
-  const { enabled, session, telemetry, production } = useProduction();
+  const state = useProduction();
+  const { enabled, session, telemetry, production, features, temporal, condition, drone, scenario, now } = state;
+  const [tab, setTab] = useState("Overview");
+  const tabs = ["Overview", "Production", "Inspection", "Diagnostics"];
   if (!enabled) return null;
 
   return (
@@ -33,19 +30,51 @@ export default function ProductionView() {
             Conveyor condition, production analysis, and inspection overview.
           </p>
         </div>
-        <div className="prod-data-status" aria-label="Production data status">
-          <span className="prod-status-badge">{session.status}</span>
-          <dl className="prod-metadata">
-            <div><dt>Data source</dt><dd>{session.source}</dd></div>
-            <div><dt>Last observation</dt><dd>{session.lastUpdatedAt === null ? "Unavailable" : new Date(session.lastUpdatedAt).toLocaleTimeString()}</dd></div>
-          </dl>
+        <div className="prod-header-tools">
+          <span className="prod-status-badge">{session.status} / {session.source}</span>
+          <span className="prod-status-badge">{scenario.source === "scenario" ? `${scenario.label} / ${scenario.timeScale}x` : "Live bridge"}</span>
+          <ReportExport state={state} compact />
         </div>
       </header>
-
-      <div className="prod-layout">
-        <div className="prod-analytics">
-          <ThroughputStrip production={production} />
-          <InputPanel production={production} />
+      <details className="prod-toolbar"><summary>Source &amp; demo controls</summary>
+        <ScenarioPanel scenario={scenario} condition={condition} drone={drone} />
+      </details>
+      <dl className="prod-summary-ribbon" aria-label="Production summary">
+        {[["Calculated throughput", production.flow], ["Accumulated tonnes", production.metrics.accumulated], ["Observed availability", production.metrics.availability]].map(([label, metric]) =>
+          <div className="prod-kpi" key={label}><dt>{label}</dt><dd><MetricValue metric={metric} /></dd></div>)}
+        <div className="prod-kpi"><dt>Condition / prototype indicator</dt><dd>{condition.score === null ? "Unavailable" : `${condition.score}/100 / ${condition.condition}`}
+          <small className="prod-metric-source">{condition.context} / {condition.coverage.text}</small></dd></div>
+      </dl>
+      {condition.criticalIndicators.length > 0 && <div className="prod-critical-panel" role="status">
+        <h3>Critical individual indicators</h3><ul>{condition.criticalIndicators.map((item, index) => <li key={index}>{item.nodeId}: {item.reason}</li>)}</ul>
+      </div>}
+      <div className="prod-tabs" role="tablist" aria-label="Production workspaces">
+        {tabs.map((name, index) => <button key={name} id={`prod-tab-${name}`} role="tab" type="button"
+          aria-selected={tab === name} aria-controls={`prod-panel-${name}`} tabIndex={tab === name ? 0 : -1}
+          onClick={() => setTab(name)} onKeyDown={event => {
+            const target = event.key === "ArrowRight" ? (index + 1) % tabs.length : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null;
+            if (target !== null) { event.preventDefault(); setTab(tabs[target]); document.getElementById(`prod-tab-${tabs[target]}`)?.focus(); }
+          }}>{name}</button>)}
+      </div>
+      <div id={`prod-panel-${tab}`} role="tabpanel" aria-labelledby={`prod-tab-${tab}`} tabIndex={0} className="prod-workspace">
+        {tab === "Overview" && <div className="prod-layout">
+          <ConditionDisplay condition={condition} showCritical={false} />
+          <div className="prod-analytics">
+            <MaintenanceRec condition={condition} />
+            <section className="prod-card prod-inspection-summary"><span className="prod-simulation-badge">SIMULATION</span>
+              <h2>Inspection mission</h2><p>{drone.mission.phase} / {drone.mission.findings.length} completed inspections</p>
+              <p className="prod-description">Linked sensor evidence from the configured {condition.layout.lengthKm} km demo route. Flight pauses outside the inspection viewport.</p>
+              <div className="prod-actions"><button onClick={() => setTab("Inspection")}>Open inspection workspace</button></div>
+            </section>
+          </div>
+        </div>}
+        {tab === "Production" && <div className="prod-analytics">
+          <details className="prod-toolbar"><summary>Edit production assumptions</summary><InputPanel production={production} scenarioActive={scenario.source === "scenario"} /></details>
+          <ForecastPanel production={production} features={features} temporal={temporal} now={now} />
+          <ProductionImpact production={production} />
+        </div>}
+        {tab === "Inspection" && <DronePanel drone={drone} condition={condition} scenario={scenario} />}
+        {tab === "Diagnostics" && <div className="prod-analytics">
           <section className="prod-card" aria-label="Telemetry observations">
             <div className="prod-card-heading">
               <Activity size={18} aria-hidden="true" />
@@ -71,40 +100,8 @@ export default function ProductionView() {
             </div>
           </section>
 
-          <PlaceholderCard title="Condition analysis" icon={Activity}>
-            Sensor assessments, trends, and contributing evidence will appear here.
-          </PlaceholderCard>
-          <PlaceholderCard title="Maintenance recommendations" icon={Wrench}>
-            Inspection suggestions will appear when condition evidence is available.
-          </PlaceholderCard>
-          <PlaceholderCard title="Throughput history & forecast" icon={TrendingUp}>
-            Observations and forecasts will appear after sufficient valid history is available.
-          </PlaceholderCard>
-          <ProductionImpact production={production} />
-        </div>
-
-        <aside className="prod-drone-column" aria-label="Drone inspection simulation">
-          <section className="prod-card prod-drone-card">
-            <div className="prod-card-heading">
-              <ScanLine size={18} aria-hidden="true" />
-              <h2>Drone inspection</h2>
-            </div>
-            <span className="prod-status-badge">Simulation · Unavailable</span>
-            <div className="prod-drone-viewport">
-              <ScanLine size={40} aria-hidden="true" />
-              <p className="prod-placeholder">Unavailable</p>
-              <p className="prod-description">Drone simulation will appear here.</p>
-            </div>
-            <dl className="prod-drone-details">
-              {["Mission status", "Route progress", "Inspection findings"].map((label) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>Unavailable</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        </aside>
+          <SensorFeaturePanel features={features} temporal={temporal} />
+        </div>}
       </div>
     </div>
   );

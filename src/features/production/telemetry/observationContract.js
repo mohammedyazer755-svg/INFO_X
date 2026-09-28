@@ -21,7 +21,7 @@ let sequence = 0;
 
 export function createObservation({
   field, value, source = "unavailable", acquiredAt, receivedAt = Date.now(),
-  sampleId, quality, calibrationStatus = "unknown", deviceId = null,
+  sampleId, quality, calibrationStatus = "unknown", deviceId = null, scenarioTag = null,
 }) {
   const definition = CHANNELS[field];
   if (!definition) throw new TypeError(`Unknown telemetry field: ${field}`);
@@ -46,10 +46,10 @@ export function createObservation({
     acquiredAt: validTimes ? timestamp : receivedAt,
     receivedAt, sampleId: sampleId ?? `navix-${++sequence}`,
     quality: resolvedQuality, calibrationStatus, nodeId: definition.nodeId,
-    deviceId,
+    deviceId, scenarioTag,
   });
 }
 
 export function observationIdentity(observation) {
-  return JSON.stringify([observation.source, observation.deviceId, observation.calibrationStatus]);
+  return JSON.stringify([observation.source, observation.deviceId, observation.calibrationStatus, observation.scenarioTag]);
 }

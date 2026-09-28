@@ -1,10 +1,12 @@
 import { calcThroughputBeltLoad, calcThroughputGeometry, isNonnegative, PRESETS, unavailable } from "../calculations/throughput.js";
 import { accumulateSample, addStateTransition, calcAvailability, classifyTimeState, createAccountingSession,
   pauseAccounting, projectShiftTonnes, suspendAccounting } from "../calculations/accounting.js";
+import { forecastThroughput, forecastShiftProjection } from "../calculations/forecast.js";
+import { DEFAULT_FORECAST_CONFIG } from "../config/forecastConfig.js";
 
 export const DEFAULT_INPUTS = Object.freeze({
   mode: "beltLoad", area: 0.025, density: 2000, load: 50, designCapacity: "",
-  expectedThroughput: 360, shiftDurationHrs: 8, orePrice: "", assumedUptime: 1,
+  expectedThroughput: 360, assumedFutureThroughput: 360, shiftDurationHrs: 8, orePrice: "", assumedUptime: 1,
   context: "demo", speedMode: "telemetry", fixedSpeed: 2, maxGapMs: 5000,
   scheduled: true, confirmedState: "auto",
 });
@@ -26,8 +28,12 @@ function flowMetric(speed, settings) {
   return { ...base, value: result, speedMps, unavailable: false, quality: "valid", reason: null };
 }
 
-export function createThroughputController(telemetryStore, { now = Date.now } = {}) {
+export function createThroughputController(telemetryStore, { now = telemetryStore.getCurrentTime ?? Date.now } = {}) {
   let settings = { ...DEFAULT_INPUTS };
+  let forecastOptions = { ...DEFAULT_FORECAST_CONFIG };
+  let flowHistory = [];
+  let lastForecastSampleAt = -Infinity;
+  let lastForecastSampleId = null;
   let sessions = { demo: createAccountingSession("demo"), hardware: createAccountingSession("hardware") };
   let revision = 0;
   let lastSettingsAt = -Infinity;
@@ -47,24 +53,32 @@ export function createThroughputController(telemetryStore, { now = Date.now } = 
     const observed = session.validMs > 0;
     const elapsedHours = session.startedAt === null ? 0 : Math.max(0, now() - session.startedAt) / 3600000;
     const remainingHours = isNonnegative(settings.shiftDurationHrs) ? Math.max(0, settings.shiftDurationHrs - elapsedHours) : NaN;
+    const remainingScheduledHours = Number.isFinite(remainingHours) ? settings.scheduled ? remainingHours : 0 : NaN;
+    const effectiveForecastOptions = { ...forecastOptions, freshnessMs: telemetryStore.getFreshnessLimit("speed"),
+      maxGapMs: Math.min(settings.maxGapMs, forecastOptions.maxGapMs, telemetryStore.getFreshnessLimit("speed")) };
+    const forecast = forecastThroughput(flowHistory, effectiveForecastOptions, now());
+    const dataProjection = observed ? forecastShiftProjection(session.accumulatedTonnes, remainingScheduledHours, settings.assumedUptime,
+      flowHistory, effectiveForecastOptions, now()) : unavailable("Projection starts after a valid observed interval.");
     const loss = session.lossUnknownMs > 0 ? unavailable("Expected rate was unavailable during some confirmed downtime.")
       : observed ? session.lostTonnes : unavailable("No valid observed interval yet.");
     snapshot = {
-      settings: { ...settings }, sessions, accountingSession: session, flow,
+      settings: { ...settings }, sessions, accountingSession: session, flow, forecast, forecastOptions: { ...forecastOptions },
+      flowHistory: [...flowHistory], dataProjection,
       metrics: {
         accumulated: metric(observed ? session.accumulatedTonnes : unavailable("No valid observed interval yet."), "t"),
         loss: metric(loss, "t"),
         availability: metric(calcAvailability(session), "%"),
         coverage: metric(totalMs > 0 ? session.validMs / totalMs * 100 : unavailable("No observed interval yet."), "%"),
-        projected: metric(observed ? projectShiftTonnes(session.accumulatedTonnes, remainingHours, settings.expectedThroughput, settings.assumedUptime)
+        projected: metric(observed ? projectShiftTonnes(session.accumulatedTonnes, remainingScheduledHours, settings.assumedFutureThroughput, settings.assumedUptime)
           : unavailable("Projection starts after a valid observed interval."), "t", { label: "ASSUMED", provenance: [...session.provenance, "manual"] }),
         lossValue: metric(typeof loss === "number" && isNonnegative(settings.orePrice) ? loss * settings.orePrice
           : unavailable("Enter a valid price and collect loss observations."), "currency units", { label: "ASSUMED", provenance: [...session.provenance, "manual"] }),
-        forecast: metric(unavailable("Forecast throughput is not implemented in this phase."), "t/h"),
+        forecast: { ...metric(forecast.unavailable ? unavailable(forecast.reason) : forecast.value, "t/h", { label: "FORECAST / ESTIMATED" }),
+          source: forecast.source, quality: forecast.quality },
         time: Object.fromEntries(Object.entries(session.timeMs).map(([state, duration]) =>
           [state, metric(duration / 1000, "s")])),
       },
-      remainingHours,
+      remainingHours, remainingScheduledHours,
       status: flow.unavailable ? flow.reason : session.status,
     };
   }
@@ -76,6 +90,7 @@ export function createThroughputController(telemetryStore, { now = Date.now } = 
     const context = settings.context;
     const session = sessions[context];
     if (flow.unavailable) {
+      flowHistory = [];
       sessions = { ...sessions, [context]: suspendAccounting(session, flow.reason) };
     } else if (speed.acquiredAt >= lastSettingsAt) {
       const sample = {
@@ -85,6 +100,16 @@ export function createThroughputController(telemetryStore, { now = Date.now } = 
         state: classifyTimeState({ ...settings, speed: flow.speedMps, quality: flow.quality }),
         expectedThroughput: settings.expectedThroughput,
       };
+      if (speed.acquiredAt > lastForecastSampleAt && speed.sampleId !== lastForecastSampleId) {
+        lastForecastSampleAt = speed.acquiredAt;
+        lastForecastSampleId = speed.sampleId;
+        const point = { t: sample.at, v: sample.tph, quality: sample.quality, source: sample.source,
+          identity: sample.identity, regime: sample.state, sampleId: sample.sampleId };
+        const previous = flowHistory.at(-1);
+        if (previous && (previous.identity !== point.identity || previous.regime !== point.regime ||
+          point.t - previous.t > Math.min(settings.maxGapMs, forecastOptions.maxGapMs, telemetryStore.getFreshnessLimit("speed")))) flowHistory = [];
+        flowHistory = [...flowHistory, point].filter(item => item.t >= point.t - forecastOptions.windowMs).slice(-2048);
+      }
       sessions = { ...sessions, [context]: accumulateSample(session, sample,
         { maxGapMs: Math.min(settings.maxGapMs, telemetryStore.getFreshnessLimit("speed")) }) };
     }
@@ -103,6 +128,8 @@ export function createThroughputController(telemetryStore, { now = Date.now } = 
       if (next.context === "hardware") next.speedMode = "telemetry";
     }
     settings = next;
+    if (['context', 'mode', 'area', 'density', 'load', 'speedMode', 'fixedSpeed', 'maxGapMs', 'scheduled', 'confirmedState']
+      .some(key => previousSettings[key] !== settings[key])) flowHistory = [];
     lastSettingsAt = now();
     if (previousSettings.context !== settings.context) {
       sessions = { ...sessions, [previousSettings.context]: pauseAccounting(sessions[previousSettings.context]),
@@ -140,7 +167,9 @@ export function createThroughputController(telemetryStore, { now = Date.now } = 
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     connect() { const unsubscribe = telemetryStore.subscribe(consume); consume(); return unsubscribe; },
     updateInputs, applyPreset,
-    resetSession() { sessions = { ...sessions, [settings.context]: createAccountingSession(settings.context) }; lastSettingsAt = now(); revision++; notify(); },
-    suspend() { sessions = { ...sessions, [settings.context]: pauseAccounting(sessions[settings.context]) }; notify(); },
+    updateForecastOptions(patch) { forecastOptions = { ...forecastOptions, ...patch }; notify(); },
+    resetSession() { flowHistory = []; lastForecastSampleAt = -Infinity; lastForecastSampleId = null;
+      sessions = { ...sessions, [settings.context]: createAccountingSession(settings.context) }; lastSettingsAt = now(); revision++; notify(); },
+    suspend() { flowHistory = []; sessions = { ...sessions, [settings.context]: pauseAccounting(sessions[settings.context]) }; notify(); },
   };
 }

@@ -69,6 +69,16 @@ test("missing and invalid supplied values cannot refresh previous valid readings
   assert.equal(f.latest("tempC").source, "hardware");
 });
 
+test("losing only one ESP32 field stales only that channel while continuing fields remain fresh", () => {
+  const f = fixture(); f.bridge.setConnection(true, "A");
+  f.bridge.publishHardwarePayload({ piezoVal: 350, tempC: 34, irLeft: 1, irRight: 1 });
+  for (let at = 2000; at <= 7000; at += 1000) {
+    f.at(at); f.bridge.publishHardwarePayload({ tempC: 34, irLeft: 1, irRight: 1 }); f.store.refresh();
+  }
+  assert.equal(f.latest("piezoVal").quality, "stale"); assert.equal(f.latest("piezoVal").acquiredAt, 1000);
+  for (const field of ["tempC", "irLeft", "irRight"]) { assert.equal(f.latest(field).quality, "valid"); assert.equal(f.latest(field).acquiredAt, 7000); }
+});
+
 test("store sorts out-of-order samples, bounds history and rejects duplicates", () => {
   const store = createTelemetryStore({ maxEntries: 3, now: () => 5000 });
   const sample = (id, acquiredAt) => ({ field: "tempC", value: 34,
