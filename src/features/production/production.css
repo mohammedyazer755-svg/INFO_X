@@ -526,3 +526,66 @@
   .abb-main-content:has(.prod-page) { padding:12px; }
   .prod-scene-help { font-size:9px; max-width:calc(100% - 28px); }
 }
+
+/* Final presentation: shared type scale, compact hierarchy, dedicated mission console. */
+.prod-page { gap:18px; }
+.prod-page-header.prod-card { background:transparent; border:0; box-shadow:none; padding:2px 0 6px; }
+.prod-page-header h1 { font-size:24px; font-weight:650; letter-spacing:-0.7px; }
+.prod-page .prod-eyebrow { font-size:10px; font-weight:700; letter-spacing:1.6px; color:var(--text-muted); }
+.prod-page h2 { font-size:15px; font-weight:650; letter-spacing:-0.2px; }
+.prod-page h3 { font-size:13px; font-weight:600; }
+.prod-page .prod-description { font-size:12px; line-height:1.65; }
+.prod-summary-ribbon { gap:0; border:1px solid var(--border-color); border-radius:10px; background:var(--bg-surface); overflow:hidden; }
+.prod-summary-ribbon .prod-kpi { border:0; border-right:1px solid var(--border-color); border-radius:0; padding:18px 22px; background:transparent; }
+.prod-summary-ribbon .prod-kpi:last-child { border-right:0; }
+.prod-summary-ribbon dt { color:var(--text-muted); font-size:11px; font-weight:500; }
+.prod-summary-ribbon dd { font-family:var(--font-mono); font-size:22px; font-weight:550; letter-spacing:-0.6px; }
+.prod-summary-ribbon .prod-metric-source { letter-spacing:0; font-size:10px; }
+.prod-score-denominator { color:var(--text-dim); font-size:13px; margin-left:3px; }
+.prod-condition-chip { display:inline-block; margin-left:10px; font:500 11px var(--font-sans); letter-spacing:0; }
+.prod-tabs { gap:28px; }
+.prod-tabs button { font-size:12px; padding:10px 0 12px; border-bottom-width:2px; }
+.prod-inspection-titlebar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:18px; border-bottom:1px solid var(--border-color); }
+.prod-inspection-titlebar .prod-card-heading { margin:0; }
+.prod-drone-card .prod-drone-telemetry { margin:0; padding:18px 0; }
+.prod-drone-telemetry dt { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; }
+.prod-drone-telemetry dd { font:500 16px var(--font-mono); color:var(--text-main); margin-top:4px; }
+.prod-inspection-grid { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start; }
+.prod-inspection-stage { min-width:0; }
+.prod-inspection-stage .prod-camera-controls { margin:0 0 12px; width:100%; background:var(--bg-surface-alt); }
+.prod-inspection-stage .prod-camera-controls button { font-size:11px; padding:8px; }
+.prod-inspection-stage .prod-camera-controls button:last-child { margin-left:auto; }
+.prod-drone-card .prod-drone-viewport.prod-drone-scene { height:480px; min-height:360px; margin:0; border-radius:8px; }
+.prod-stage-caption { display:flex; justify-content:space-between; gap:8px; color:var(--text-muted); font-size:10px; padding:10px 0; }
+.prod-mission-console { background:var(--bg-surface-alt); border:1px solid var(--border-color); border-radius:8px; padding:18px; min-width:0; }
+.prod-mission-console h3 { font-size:15px; margin:6px 0; }
+.prod-mission-console .prod-drone-dispatch { margin-top:16px; }
+.prod-mission-console .prod-drone-controls { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 0; margin:0; }
+.prod-mission-console .prod-drone-controls button { margin:0; padding:9px; min-height:38px; font-size:11px; }
+.prod-mission-console .prod-waypoint-grid { grid-template-columns:1fr; gap:6px; margin:12px 0; }
+.prod-mission-console .prod-waypoint { padding:10px 12px; gap:4px 8px; grid-template-columns:8px 65px 1fr; border-radius:6px; }
+.prod-mission-console .prod-waypoint > span:not(.prod-node-dot) { grid-column:3; grid-row:1/3; font-size:10px; }
+.prod-mission-console .prod-waypoint small { grid-column:2; font-size:9px; }
+.prod-mission-console .prod-drone-route { margin:14px 0 0; }
+.prod-mission-console .prod-node-selection { flex-wrap:wrap; padding:12px; gap:8px; }
+.prod-mission-console .prod-node-selection button { width:100%; font-size:11px; }
+.prod-mission-console .prod-drone-suggestion { margin-top:14px; }
+.prod-inspection-footer { border-top:1px solid var(--border-color); margin-top:20px; padding-top:4px; }
+.prod-inspection-footer .prod-mission-details { border:0; padding:8px 0; margin:10px 0; font-size:11px; }
+.prod-inspection-footer .prod-drone-findings { font-size:12px; }
+.prod-drone-findings thead { background:var(--bg-surface-alt); color:var(--text-muted); }
+.prod-drone-findings th, .prod-drone-findings td { padding:12px; }
+.prod-drone-findings tbody td[colspan] { text-align:center; padding:28px 16px; color:var(--text-muted); }
+.prod-page .prod-footnote { font-size:10px; margin-top:12px; }
+.prod-drone-expanded .prod-inspection-grid { grid-template-columns:1fr; }
+.prod-drone-expanded .prod-drone-viewport.prod-drone-scene { height:70vh; }
+.prod-drone-expanded .prod-mission-console .prod-waypoint-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+@media(max-width:1200px) { .prod-inspection-grid { grid-template-columns:minmax(0,1fr) 260px; gap:14px; } .prod-mission-console { padding:14px; } }
+@media(max-width:1024px) { .prod-inspection-grid { grid-template-columns:1fr; } .prod-mission-console .prod-waypoint-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .prod-drone-card .prod-drone-viewport.prod-drone-scene { height:400px; } }
+@media(max-width:640px) { .prod-page-header h1 { font-size:21px; } .prod-summary-ribbon .prod-kpi { padding:14px; border-bottom:1px solid var(--border-color); } .prod-summary-ribbon dd { font-size:18px; } .prod-inspection-titlebar { align-items:flex-start; } .prod-drone-heading { flex-wrap:wrap; } .prod-mission-console .prod-waypoint-grid, .prod-drone-expanded .prod-mission-console .prod-waypoint-grid { grid-template-columns:1fr; } .prod-stage-caption { flex-wrap:wrap; } .prod-drone-card .prod-drone-viewport.prod-drone-scene { height:340px; min-height:300px; } }
+@media(min-width:1025px) {
+  .prod-inspection-grid { align-items:stretch; }
+  .prod-inspection-stage { display:flex; flex-direction:column; }
+  .prod-inspection-stage .prod-drone-viewport.prod-drone-scene { flex:1; height:auto; min-height:480px; }
+  .prod-drone-expanded .prod-inspection-stage .prod-drone-viewport.prod-drone-scene { flex:none; height:70vh; }
+}

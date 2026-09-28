@@ -45,7 +45,7 @@ export default function ProductionView() {
       <dl className="prod-summary-ribbon" aria-label="Production summary">
         {[["Calculated throughput", production.flow], ["Accumulated tonnes", production.metrics.accumulated], ["Observed availability", production.metrics.availability]].map(([label, metric]) =>
           <div className="prod-kpi" key={label}><dt>{label}</dt><dd><MetricValue metric={metric} /></dd></div>)}
-        <div className="prod-kpi"><dt>Condition / prototype indicator</dt><dd>{condition.score === null ? "Unavailable" : `${condition.score}/100 / ${condition.condition}`}
+        <div className="prod-kpi"><dt>Condition indicator</dt><dd>{condition.score === null ? "Unavailable" : <>{condition.score}<span className="prod-score-denominator">/100</span><span className={`prod-condition-chip prod-condition-${condition.tone}`}>{condition.condition}</span></>}
           <small className="prod-metric-source">{condition.context} / {condition.coverage.text}</small></dd></div>
       </dl>
       {condition.criticalIndicators.length > 0 && <div className="prod-critical-panel" role="status">

@@ -34,15 +34,18 @@ export default function DronePanel({ drone, condition, scenario = null, initialN
   const focused = markers.find(node => node.id === focusNode);
   const paused = mission.paused || drone.visibilityPaused;
   return <section className={`prod-card prod-drone-card ${expanded ? "prod-drone-expanded" : ""}`} aria-label="Drone inspection simulation">
-    <div className="prod-card-heading prod-drone-heading"><ScanLine size={18} aria-hidden="true" /><h2>Drone inspection</h2>
+    <div className="prod-inspection-titlebar"><div className="prod-card-heading prod-drone-heading"><ScanLine size={18} aria-hidden="true" /><h2>Drone inspection</h2>
       <span className="prod-simulation-badge">SIMULATION</span></div>
     <span className="prod-status-badge" role="status">{PHASES[mission.phase]}{mission.paused ? " · Paused" : drone.visibilityPaused ? " · Viewport hidden" : ""}</span>
+    </div>
     <dl className="prod-drone-telemetry">
       <div><dt>Position</dt><dd>{telemetry.positionKm.toFixed(2)} km</dd></div>
       <div><dt>Speed</dt><dd>{paused ? 0 : telemetry.speedMps} m/s</dd></div>
       <div><dt>Mission time</dt><dd>{telemetry.elapsedSeconds.toFixed(1)} s</dd></div>
       <div><dt>Battery model</dt><dd>{telemetry.batteryPct.toFixed(1)}%</dd></div>
     </dl>
+    <div className="prod-inspection-grid">
+    <div className="prod-inspection-stage">
     <div className="prod-actions prod-camera-controls" aria-label="Simulation camera">
       {[["overview", "Orbit view", Orbit], ["follow", "Follow drone", Navigation], ["waypoint", "Focus waypoint", Crosshair]].map(([mode, label, Icon]) => <button key={mode} aria-pressed={cameraMode === mode} onClick={() => { setCameraMode(mode); setResetKey(key => key + 1); }}><Icon size={15} aria-hidden="true" />{label}</button>)}
       <button aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? <Minimize2 size={15} aria-hidden="true" /> : <Maximize2 size={15} aria-hidden="true" />}{expanded ? "Compact viewport" : "Expand viewport"}</button>
@@ -50,13 +53,14 @@ export default function DronePanel({ drone, condition, scenario = null, initialN
     </div>
     <div className="prod-drone-viewport prod-drone-scene" ref={viewport}>
       <DroneViewport drone={drone} markers={markers} cameraMode={cameraMode} selectedNode={focusNode} onSelectNode={selectFocus} resetKey={resetKey} />
-      <div className="prod-scene-hud" aria-hidden="true"><span>INSPECTION SIMULATOR</span><span>{PHASES[mission.phase]} | {mission.config.timeScale}x</span></div>
+      <div className="prod-scene-hud" aria-hidden="true"><span>SIMULATED VIEW</span><span>{PHASES[mission.phase]} | {mission.config.timeScale}x</span></div>
       <div className="prod-scene-help">Drag to orbit &bull; Scroll to zoom &bull; Select a waypoint<br /><span>Illustrative route; geometry is not to physical scale.</span></div>
     </div>
-    <details className="prod-mission-details"><summary>Simulation timing &amp; assumptions / {mission.config.timeScale}x speed</summary>
-    <p className="prod-description">{mission.config.timeScale}× simulation time{scenario?.source === "scenario" ? " · shared scenario clock (scenario pause freezes flight)" : `: 1 active viewport second = ${mission.config.timeScale} mission seconds`}. Travel {mission.config.speedMps} m/s; inspection {mission.config.inspectMs / 1000} s per waypoint; takeoff/landing {mission.config.takeoffMs / 1000}/{mission.config.landingMs / 1000} s.</p>
-    <p className="prod-description">Illustrative {mission.registry.type} layout · {mission.registry.lengthKm} km. Battery drains {mission.config.batteryDrainPerSecond}% per mission second during active flight/inspection. Hidden or paused time is excluded; suspended browser time is capped to prevent catch-up jumps.</p>
-    </details>
+    <div className="prod-stage-caption"><span>Interactive site model</span><span>Illustrative layout &middot; {mission.registry.lengthKm} km</span></div>
+    </div>
+    <aside className="prod-mission-console" aria-label="Mission controls">
+      <p className="prod-eyebrow">MISSION CONTROL</p><h3>Plan an inspection</h3>
+      <p className="prod-description">Choose a route, then start a simulated inspection.</p>
     <label className="prod-field prod-drone-dispatch"><span>Simulation route</span><select value={selectedNode} disabled={mission.phase !== "idle"} onChange={event => setSelectedNode(event.target.value)}>
       <option value="">All waypoints</option>{markers.map(node => <option key={node.id} value={node.id}>{node.id} · {node.label}</option>)}
     </select></label>
@@ -79,10 +83,17 @@ export default function DronePanel({ drone, condition, scenario = null, initialN
       <p className="prod-description">{suggestion.text}</p>
       <button type="button" disabled={mission.phase !== "idle"} className="prod-button-primary" onClick={() => { setCameraMode("follow"); drone.start(suggestion.suggestedInspectionNode); }}><Navigation size={16} aria-hidden="true" />Start simulation to suggested waypoint</button>
     </div>}
+    </aside>
+    </div>
+    <div className="prod-inspection-footer">
+    <details className="prod-mission-details"><summary>Simulation timing &amp; assumptions / {mission.config.timeScale}x speed</summary>
+    <p className="prod-description">{mission.config.timeScale}× simulation time{scenario?.source === "scenario" ? " · shared scenario clock (scenario pause freezes flight)" : `: 1 active viewport second = ${mission.config.timeScale} mission seconds`}. Travel {mission.config.speedMps} m/s; inspection {mission.config.inspectMs / 1000} s per waypoint; takeoff/landing {mission.config.takeoffMs / 1000}/{mission.config.landingMs / 1000} s.</p>
+    <p className="prod-description">Illustrative {mission.registry.type} layout · {mission.registry.lengthKm} km. Battery drains {mission.config.batteryDrainPerSecond}% per mission second during active flight/inspection. Hidden or paused time is excluded; suspended browser time is capped to prevent catch-up jumps.</p>
+    </details>
     <div className="prod-telemetry-scroll">
       <table className="prod-drone-findings"><caption>SIMULATION findings · linked sensor evidence</caption>
         <thead><tr><th scope="col">Waypoint / snapshot</th><th scope="col">Linked sensor evidence</th></tr></thead>
-        <tbody>{mission.findings.length === 0 ? <tr><td colSpan="2">No completed simulated inspections.</td></tr> : mission.findings.map(finding => <tr key={finding.id}>
+        <tbody>{mission.findings.length === 0 ? <tr><td colSpan="2">No inspection snapshots yet. Start a mission to capture linked sensor evidence at each waypoint.</td></tr> : mission.findings.map(finding => <tr key={finding.id}>
           <th scope="row"><span className="prod-simulation-badge">SIMULATION</span><p>{finding.nodeId} · {finding.location}</p>
             <small>{new Date(finding.capturedAt).toLocaleTimeString()} · {finding.context}</small></th>
           <td><p>{finding.description}</p>{[...finding.modules, ...finding.supporting].length === 0 ? <p>Linked sensor evidence unavailable.</p>
@@ -91,6 +102,7 @@ export default function DronePanel({ drone, condition, scenario = null, initialN
         </tr>)}</tbody>
       </table>
     </div>
-    <p className="prod-description">Findings capture linked sensor evidence at arrival, after the declared inspection completes. They are separate from alarm logs. Reset clears this simulation mission and findings.</p>
+    <p className="prod-description prod-footnote">Snapshots contain linked sensor evidence, not independent drone measurements. Reset clears mission findings.</p>
+    </div>
   </section>;
 }

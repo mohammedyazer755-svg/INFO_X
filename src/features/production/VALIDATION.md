@@ -58,3 +58,7 @@ The provider integration test now exercises workspace navigation, keyboard tab s
 ## Interactive inspection browser verification
 
 Verified in local headless Chromium with WebGL at 1440 px and 390 px: scene renders, Start/Pause/Resume/Return work, Overview waypoint selection opens the matching inspection focus, orbit drag/zoom work, dark theme applies, and there is no page horizontal overflow on mobile. No browser page errors were reported. Desktop/close-up/mobile screenshots were inspected during development. The 111-test suite also covers explicit focus-versus-dispatch behavior and viewport expansion. Physical ESP32 and physical drone integration remain outside this simulation validation.
+
+## Presentation refinement
+
+Inspection now groups the scene and camera controls beside a dedicated mission console on desktop, with telemetry above and findings/assumptions below. Tablet and mobile layouts stack these areas. KPI summaries share a compact strip, score labels are separated from values, and typography, borders, button spacing and empty states are consistent. Browser checks on the production build verified rendered scene and mission controls at desktop/mobile sizes with no page errors or horizontal mobile overflow. All 111 automated tests pass.
