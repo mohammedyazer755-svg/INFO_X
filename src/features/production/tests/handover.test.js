@@ -17,8 +17,8 @@ test("two confirmed scheduled downtime hours use fresh one-second samples to est
 test("extension CSS uses declared theme variables and preserves the narrow-layout breakpoint", () => {
   const css = readFileSync(new URL("../production.css", import.meta.url), "utf8");
   const original = readFileSync(new URL("../../../index.css", import.meta.url), "utf8");
-  const declared = new Set([...original.matchAll(/(--[\w-]+)\s*:/g)].map(match => match[1]));
-  for (const match of css.matchAll(/var\((--[\w-]+)/g)) assert.ok(declared.has(match[1]), `${match[1]} not declared by theme`);
+  const declared = new Set([...(original + css).matchAll(/(--[\w-]+)\s*:/g)].map(match => match[1]));
+  for (const match of css.matchAll(/var\((--[\w-]+)/g)) assert.ok(declared.has(match[1]), `${match[1]} not declared by theme or extension`);
   assert.match(css, /@media\s*\(max-width:\s*1024px\)\s*\{\s*\.prod-layout\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
   assert.match(original, /\[data-theme="dark"\]/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);

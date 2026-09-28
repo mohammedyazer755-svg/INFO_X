@@ -40,7 +40,7 @@ export class SceneBoundary extends Component {
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-export default function DroneViewport({ drone, markers, cameraMode = "overview" }) {
+export default function DroneViewport({ drone, markers, cameraMode = "overview", selectedNode, onSelectNode, resetKey }) {
   const [supported, setSupported] = useState(null);
   useEffect(() => { if (!drone.reducedMotion) setSupported(canRenderWebGL()); }, [drone.reducedMotion]);
   const fail = React.useCallback(() => setSupported(false), []);
@@ -49,6 +49,6 @@ export default function DroneViewport({ drone, markers, cameraMode = "overview" 
   if (supported !== true) return fallback(supported === false ? "WebGL unavailable" : "Preparing viewport");
   if (!drone.visible) return fallback("Viewport hidden; animation paused");
   return <SceneBoundary fallback={fallback("3D renderer unavailable")}>
-    <Suspense fallback={fallback("Loading 3D viewport")}><DroneScene cameraMode={cameraMode} mission={drone.mission} markers={markers} onFailure={fail} /></Suspense>
+    <Suspense fallback={fallback("Loading 3D viewport")}><DroneScene selectedNode={selectedNode} onSelectNode={onSelectNode} resetKey={resetKey} cameraMode={cameraMode} mission={drone.mission} markers={markers} onFailure={fail} /></Suspense>
   </SceneBoundary>;
 }

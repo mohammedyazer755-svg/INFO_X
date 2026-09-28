@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Activity } from "lucide-react";
+import { Activity, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useProduction } from "./ProductionProvider";
 import { MetricValue } from "./components/ThroughputStrip";
 import InputPanel from "./components/InputPanel";
@@ -8,7 +8,7 @@ import SensorFeaturePanel from "./components/SensorFeaturePanel";
 import ConditionDisplay from "./components/ConditionDisplay";
 import MaintenanceRec from "./components/MaintenanceRec";
 import ForecastPanel from "./components/ForecastPanel";
-import DronePanel from "./components/DronePanel";
+import DronePanel, { waypointMarkers } from "./components/DronePanel";
 import ScenarioPanel from "./components/ScenarioPanel";
 import ReportExport from "./components/ReportExport";
 import "./production.css";
@@ -16,6 +16,8 @@ import "./production.css";
 export default function ProductionView() {
   const state = useProduction();
   const { enabled, session, telemetry, production, features, temporal, condition, drone, scenario, now } = state;
+  const [inspectionNode, setInspectionNode] = useState("");
+  const [sourceOpen, setSourceOpen] = useState(false);
   const [tab, setTab] = useState("Overview");
   const tabs = ["Overview", "Production", "Inspection", "Diagnostics"];
   if (!enabled) return null;
@@ -36,9 +38,10 @@ export default function ProductionView() {
           <ReportExport state={state} compact />
         </div>
       </header>
-      <details className="prod-toolbar"><summary>Source &amp; demo controls</summary>
+      <div className="prod-toolbar"><button className="prod-disclosure-button" aria-expanded={sourceOpen} aria-controls="prod-source-controls" onClick={() => setSourceOpen(!sourceOpen)}><SlidersHorizontal size={16} aria-hidden="true" />Source &amp; demo controls<ChevronDown size={16} aria-hidden="true" /></button>
+      <div id="prod-source-controls" hidden={!sourceOpen}>
         <ScenarioPanel scenario={scenario} condition={condition} drone={drone} />
-      </details>
+      </div></div>
       <dl className="prod-summary-ribbon" aria-label="Production summary">
         {[["Calculated throughput", production.flow], ["Accumulated tonnes", production.metrics.accumulated], ["Observed availability", production.metrics.availability]].map(([label, metric]) =>
           <div className="prod-kpi" key={label}><dt>{label}</dt><dd><MetricValue metric={metric} /></dd></div>)}
@@ -64,7 +67,8 @@ export default function ProductionView() {
             <section className="prod-card prod-inspection-summary"><span className="prod-simulation-badge">SIMULATION</span>
               <h2>Inspection mission</h2><p>{drone.mission.phase} / {drone.mission.findings.length} completed inspections</p>
               <p className="prod-description">Linked sensor evidence from the configured {condition.layout.lengthKm} km demo route. Flight pauses outside the inspection viewport.</p>
-              <div className="prod-actions"><button onClick={() => setTab("Inspection")}>Open inspection workspace</button></div>
+              <div className="prod-overview-route" aria-label="Conveyor inspection route">{waypointMarkers(drone.mission.registry, condition).map(node => <button key={node.id} onClick={() => { setInspectionNode(node.id); setTab("Inspection"); }} style={{ "--node-color": node.color }}><span className="prod-node-dot" /><span>{node.label}<small>{node.id} &middot; {node.km.toFixed(2)} km &middot; {node.tone}</small></span></button>)}</div>
+              <div className="prod-actions"><button className="prod-button-primary" onClick={() => setTab("Inspection")}>Open inspection workspace</button></div>
             </section>
           </div>
         </div>}
@@ -73,7 +77,7 @@ export default function ProductionView() {
           <ForecastPanel production={production} features={features} temporal={temporal} now={now} />
           <ProductionImpact production={production} />
         </div>}
-        {tab === "Inspection" && <DronePanel drone={drone} condition={condition} scenario={scenario} />}
+        {tab === "Inspection" && <DronePanel initialNode={inspectionNode} drone={drone} condition={condition} scenario={scenario} />}
         {tab === "Diagnostics" && <div className="prod-analytics">
           <section className="prod-card" aria-label="Telemetry observations">
             <div className="prod-card-heading">

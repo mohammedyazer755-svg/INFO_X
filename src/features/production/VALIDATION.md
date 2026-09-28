@@ -54,3 +54,7 @@ See [HANDOVER.md](./HANDOVER.md) for demo instructions, methods, hardware limita
 ## Dashboard redesign validation
 
 The provider integration test now exercises workspace navigation, keyboard tab selection, five expandable module summaries, inspection visibility pause/resume and persistent collection. Legacy App and scenario tests navigate the new workspaces while retaining their original source, alarm, export and accounting assertions. Visual appearance in an actual browser, GPU camera rendering and physical ESP32 behavior still require manual verification; jsdom does not validate those.
+
+## Interactive inspection browser verification
+
+Verified in local headless Chromium with WebGL at 1440 px and 390 px: scene renders, Start/Pause/Resume/Return work, Overview waypoint selection opens the matching inspection focus, orbit drag/zoom work, dark theme applies, and there is no page horizontal overflow on mobile. No browser page errors were reported. Desktop/close-up/mobile screenshots were inspected during development. The 111-test suite also covers explicit focus-versus-dispatch behavior and viewport expansion. Physical ESP32 and physical drone integration remain outside this simulation validation.

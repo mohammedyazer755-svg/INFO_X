@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { ScanLine } from "lucide-react";
+import { ScanLine, Play, Pause, Home, RotateCcw, Maximize2, Minimize2, Crosshair, Orbit, Navigation, MapPin } from "lucide-react";
 import { useDroneViewport } from "../hooks/useDroneSimulation.js";
 import DroneViewport from "../simulation/DroneViewport";
 import { isMissionActive } from "../simulation/droneStateMachine.js";
@@ -18,16 +18,20 @@ export function waypointMarkers(registry, condition) {
   });
 }
 
-export default function DronePanel({ drone, condition, scenario = null }) {
+export default function DronePanel({ drone, condition, scenario = null, initialNode = "" }) {
   const viewport = useRef(null);
   useDroneViewport(viewport, drone.setViewportVisible);
-  const [cameraMode, setCameraMode] = useState("overview");
+  const [cameraMode, setCameraMode] = useState(initialNode ? "waypoint" : "follow");
+  const [resetKey, setResetKey] = useState(0);
+  const [focusNode, setFocusNode] = useState(initialNode);
+  const selectFocus = id => { setFocusNode(id); setCameraMode("waypoint"); };
   const [expanded, setExpanded] = useState(false);
-  const [selectedNode, setSelectedNode] = useState("");
+  const [selectedNode, setSelectedNode] = useState(initialNode);
   const { mission, telemetry } = drone;
   const active = isMissionActive(mission);
   const markers = useMemo(() => waypointMarkers(mission.registry, condition), [mission.registry, condition]);
   const suggestion = condition.recommendations.find(item => item.suggestedInspectionNode && mission.registry.nodes[item.suggestedInspectionNode]);
+  const focused = markers.find(node => node.id === focusNode);
   const paused = mission.paused || drone.visibilityPaused;
   return <section className={`prod-card prod-drone-card ${expanded ? "prod-drone-expanded" : ""}`} aria-label="Drone inspection simulation">
     <div className="prod-card-heading prod-drone-heading"><ScanLine size={18} aria-hidden="true" /><h2>Drone inspection</h2>
@@ -40,11 +44,14 @@ export default function DronePanel({ drone, condition, scenario = null }) {
       <div><dt>Battery model</dt><dd>{telemetry.batteryPct.toFixed(1)}%</dd></div>
     </dl>
     <div className="prod-actions prod-camera-controls" aria-label="Simulation camera">
-      {["overview", "follow", "waypoint"].map(mode => <button key={mode} aria-pressed={cameraMode === mode} onClick={() => setCameraMode(mode)}>{mode === "waypoint" ? "Focus waypoint" : mode === "follow" ? "Follow drone" : "Overview"}</button>)}
-      <button aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Compact viewport" : "Expand viewport"}</button>
+      {[["overview", "Orbit view", Orbit], ["follow", "Follow drone", Navigation], ["waypoint", "Focus waypoint", Crosshair]].map(([mode, label, Icon]) => <button key={mode} aria-pressed={cameraMode === mode} onClick={() => { setCameraMode(mode); setResetKey(key => key + 1); }}><Icon size={15} aria-hidden="true" />{label}</button>)}
+      <button aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? <Minimize2 size={15} aria-hidden="true" /> : <Maximize2 size={15} aria-hidden="true" />}{expanded ? "Compact viewport" : "Expand viewport"}</button>
+
     </div>
     <div className="prod-drone-viewport prod-drone-scene" ref={viewport}>
-      <DroneViewport drone={drone} markers={markers} cameraMode={cameraMode} />
+      <DroneViewport drone={drone} markers={markers} cameraMode={cameraMode} selectedNode={focusNode} onSelectNode={selectFocus} resetKey={resetKey} />
+      <div className="prod-scene-hud" aria-hidden="true"><span>INSPECTION SIMULATOR</span><span>{PHASES[mission.phase]} | {mission.config.timeScale}x</span></div>
+      <div className="prod-scene-help">Drag to orbit &bull; Scroll to zoom &bull; Select a waypoint<br /><span>Illustrative route; geometry is not to physical scale.</span></div>
     </div>
     <details className="prod-mission-details"><summary>Simulation timing &amp; assumptions / {mission.config.timeScale}x speed</summary>
     <p className="prod-description">{mission.config.timeScale}× simulation time{scenario?.source === "scenario" ? " · shared scenario clock (scenario pause freezes flight)" : `: 1 active viewport second = ${mission.config.timeScale} mission seconds`}. Travel {mission.config.speedMps} m/s; inspection {mission.config.inspectMs / 1000} s per waypoint; takeoff/landing {mission.config.takeoffMs / 1000}/{mission.config.landingMs / 1000} s.</p>
@@ -54,20 +61,23 @@ export default function DronePanel({ drone, condition, scenario = null }) {
       <option value="">All waypoints</option>{markers.map(node => <option key={node.id} value={node.id}>{node.id} · {node.label}</option>)}
     </select></label>
     <div className="prod-actions prod-drone-controls">
-      <button type="button" disabled={mission.phase !== "idle"} onClick={() => drone.start(selectedNode || null)}>Start</button>
-      <button type="button" disabled={!active} onClick={() => mission.paused ? drone.resume() : drone.pause()}>{mission.paused ? "Resume" : "Pause"}</button>
-      <button type="button" disabled={!["takingOff", "travelling", "inspecting"].includes(mission.phase)} onClick={drone.returnToBase}>Return</button>
-      <button type="button" onClick={drone.reset}>Reset</button>
+      <button type="button" disabled={mission.phase !== "idle"} className="prod-button-primary" onClick={() => { setCameraMode("follow"); drone.start(selectedNode || null); }}><Play size={16} aria-hidden="true" />Start</button>
+      <button type="button" disabled={!active} onClick={() => mission.paused ? drone.resume() : drone.pause()}>{mission.paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}{mission.paused ? "Resume" : "Pause"}</button>
+      <button type="button" disabled={!["takingOff", "travelling", "inspecting"].includes(mission.phase)} onClick={drone.returnToBase}><Home size={16} aria-hidden="true" />Return</button>
+      <button type="button" className="prod-button-quiet" onClick={drone.reset}><RotateCcw size={16} aria-hidden="true" />Reset</button>
     </div>
     <div className="prod-drone-route" aria-label="Simulation route progress">
       <label>Mission route progress <progress max="1" value={telemetry.progress} /></label>
-      <div className="prod-drone-route-markers">{markers.map(marker => <span key={marker.id} style={{ left: `${marker.km / mission.registry.lengthKm * 100}%`, color: marker.color }} title={`${marker.label}: ${marker.tone}`}>
-        <span aria-hidden="true">●</span><small>{marker.id.replace("NODE ", "N")}</small></span>)}</div>
+      <div className="prod-waypoint-grid">{markers.map(marker => <button type="button" key={marker.id} className="prod-waypoint" aria-pressed={focusNode === marker.id} onClick={() => selectFocus(marker.id)} style={{ "--node-color": marker.color }}>
+        <span className="prod-node-dot" /><strong>{marker.id}</strong><span>{marker.label}</span><small>{marker.km.toFixed(2)} km &middot; {marker.tone}</small>
+      </button>)}</div>
+      {focused && <div className="prod-node-selection" role="status"><MapPin size={17} aria-hidden="true" /><div><strong>{focused.label}</strong><p className="prod-description">Linked condition: {focused.tone}. Selecting a node focuses the view; dispatch starts a simulation.</p></div><button type="button" className="prod-button-primary" disabled={mission.phase !== "idle"} onClick={() => { setCameraMode("follow"); drone.start(focused.id); }}><Navigation size={15} aria-hidden="true" />Inspect {focused.id}</button></div>}
+
       <p className="prod-description">{mission.findings.length}/{mission.route.length || markers.length} inspections complete · marker colors reflect linked condition indicators; gray means unavailable.</p>
     </div>
     {suggestion && <div className="prod-drone-suggestion"><p>Suggested simulation waypoint: {suggestion.suggestedInspectionNode} · {suggestion.location}</p>
       <p className="prod-description">{suggestion.text}</p>
-      <button type="button" disabled={mission.phase !== "idle"} onClick={() => drone.start(suggestion.suggestedInspectionNode)}>Start simulation to suggested waypoint</button>
+      <button type="button" disabled={mission.phase !== "idle"} className="prod-button-primary" onClick={() => { setCameraMode("follow"); drone.start(suggestion.suggestedInspectionNode); }}><Navigation size={16} aria-hidden="true" />Start simulation to suggested waypoint</button>
     </div>}
     <div className="prod-telemetry-scroll">
       <table className="prod-drone-findings"><caption>SIMULATION findings · linked sensor evidence</caption>

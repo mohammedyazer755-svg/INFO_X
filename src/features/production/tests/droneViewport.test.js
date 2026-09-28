@@ -33,6 +33,18 @@ test("viewport provides unavailable-WebGL/reduced-motion fallbacks and observes 
     assert.ok(document.body.textContent.includes("SIMULATION"));
     assert.ok(document.body.textContent.includes("linked sensor evidence"));
     assert.deepEqual(controls, []); // Suggested waypoint does not dispatch itself.
+    const node = document.querySelector('.prod-waypoint');
+    await act(async () => node.click());
+    assert.equal(node.getAttribute('aria-pressed'), 'true');
+    assert.deepEqual(controls, []); // Focus is independent of dispatch.
+    assert.ok(document.querySelector('.prod-node-selection').textContent.includes('Head Pulley'));
+    const expand = [...document.querySelectorAll('button')].find(button => button.textContent === 'Expand viewport');
+    await act(async () => expand.click());
+    assert.ok(document.querySelector('.prod-drone-expanded'));
+    const inspect = [...document.querySelectorAll('button')].find(button => button.textContent === 'Inspect NODE 01');
+    await act(async () => inspect.click());
+    assert.deepEqual(controls, ['NODE 01']);
+    controls.length = 0;
     await act(async () => observeCallback([{ isIntersecting: true }]));
     assert.equal(visible.at(-1), true);
     await act(async () => observeCallback([{ isIntersecting: false }]));

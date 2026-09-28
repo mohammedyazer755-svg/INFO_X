@@ -51,3 +51,11 @@ To disable the extension, set `PRODUCTION_ENABLED = false` in `src/App.jsx`, the
 The extension opens on Overview with four persistent KPI summaries, expandable module evidence and the highest-priority recommendation. Production contains the forecast and accounting, with calculation assumptions and forecast settings collapsed initially. Inspection provides a larger, expandable procedural scene, overview/follow/waypoint camera modes, explicit dispatch controls and simulation findings. Diagnostics contains per-field telemetry and detailed feature analysis. Source/demo controls and JSON export remain accessible above the tabs.
 
 Tabs support arrow keys, Home and End. Changing workspaces preserves provider-owned telemetry, accounting and mission state. Leaving Inspection pauses flight through viewport visibility; production collection continues. Critical individual indicators and module coverage remain visible across workspaces. No new polling loop, storage key, hardware command or measurement claim was added. Reduced motion and unavailable WebGL use the SVG route view.
+
+## Interactive inspection visual upgrade
+
+The procedural quadcopter includes a shaped housing, battery pack, motor arms, propellers, skids, gimbal housing and navigation lights. The environment includes ore, conveyor rollers/supports, transfer equipment, a service road, a landing pad and local shadow lighting; it downloads no external models or environment maps. Geometry is illustrative and not to physical scale. Rotor pose derives from mission time, so pause and shared-clock behavior remain intact.
+
+Orbit view supports mouse/touch camera controls and zoom; Follow tracks the drone; Focus frames a selected waypoint. Waypoints can be selected through the scene, route cards or Overview. Selection never dispatches a mission: Inspect/Start is explicit. The camera housing is visual only and does not add image acquisition, thermal sensing, AI detections or independent measurements.
+
+Mission buttons now have icons, primary/secondary emphasis and disabled states. Mobile shell styles apply only while the production page is mounted. Source controls use an accessible expanded/collapsed button. Original storage, polling, alarms and other pages retain their behavior.
